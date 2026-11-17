@@ -3,6 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: masterland-postgres
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     env_file: /opt/masterland/env/database.env
     volumes: ["masterland-postgres:/var/lib/postgresql/data"]
     # Database is reachable only on the private Masterland Docker network.

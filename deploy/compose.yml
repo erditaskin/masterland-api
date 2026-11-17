@@ -3,6 +3,9 @@ services:
     image: ${MASTERLAND_API_IMAGE:?Exact release image required}
     container_name: masterland-api
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     init: true
     env_file: /opt/masterland/env/api.env
     environment:
