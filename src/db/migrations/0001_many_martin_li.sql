@@ -1,0 +1,1 @@
+ALTER TABLE "ad_intents" ADD COLUMN "cancelled_at" timestamp with time zone;

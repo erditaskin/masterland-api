@@ -5,6 +5,7 @@ import { saveSchema } from "../game/save.js";
 import { requireSession } from "../sessions.js";
 import {
   prepareAd,
+  cancelAd,
   prepareSchema,
   recordReward,
   redeemReward,
@@ -116,6 +117,22 @@ export const registerRewards = (app: App) => {
           request.body.expected_revision,
           request.body.save_payload,
         ),
+      );
+    },
+  );
+  app.post(
+    "/v1/rewards/:intentID/cancel",
+    {
+      schema: {
+        params: z.object({ intentID: z.uuid() }),
+        response: { 200: z.object({ cancelled: z.boolean() }), ...errors },
+      },
+    },
+    async (request) => {
+      if (!app.config.ADMOB_SSV_ENABLED) throw new ApiError("disabled");
+      const session = await requireSession(app, request);
+      return app.db.begin(async (tx) =>
+        cancelAd(tx, session, request.params.intentID),
       );
     },
   );

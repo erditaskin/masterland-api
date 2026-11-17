@@ -136,6 +136,7 @@ export const adIntents = pgTable(
     cityID: text("city_id"),
     producerID: text("producer_id"),
     createdAt: date("created_at"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (t) => [

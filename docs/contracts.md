@@ -29,11 +29,11 @@ Owner advisory lock transaction'ı ilk insert dahil CAS'ı serileştirir. Tam ay
 
 `POST /v1/rewards/prepare`, `POST /v1/rewards/redeem`, `GET /v1/rewards/pending`, `GET /v1/rewards/:intentID`; SSV `GET /v1/admob/ssv`.
 
-Enerji +25; üretici ödülü yalnız sunucuda bağlanmış hedef üreticiyi 80 kullanım/readyAt0 yapar. İki tür ortak günlük dört doğrulanmış ödül sınırını UTC günüyle kullanır. Intent owner/session/tür/şehir/üreticiye bağlıdır. Cihazlar aynı pending intent'i paylaşmaz. Aktif intent'ler geçici kota rezervasyonu oluşturur; süre15 dakika, callback olay zamanı toleransı ±5 dakikadır. Rezervasyon ödeme değildir; süresi geçen/iptal edilen rezervasyonların gerçek reklam davranışı ayrıca kabul edilmelidir.
+Enerji +25; üretici ödülü yalnız sunucuda bağlanmış hedef üreticiyi 80 kullanım/readyAt0 yapar. İki tür ortak günlük dört doğrulanmış ödül sınırını UTC günüyle kullanır. Intent owner/session/tür/şehir/üreticiye bağlıdır. Cihazlar aynı pending intent'i paylaşmaz. Aktif intent'ler geçici kota rezervasyonu oluşturur; süre15 dakika, callback olay zamanı toleransı ±5 dakikadır. Rezervasyon ödeme değildir. `POST /v1/rewards/:intentID/cancel` yalnız aynı owner/session rezervasyonunu bırakır; intent metadata’sı korunur. İptal, bekleyen kotayı serbest bırakır; geç gelen geçerli imzalı earned callback’i kaybolmaz. Gerçek cihaz iptal davranışı ayrıca kabul edilmelidir.
 
 ECDSA imzası orijinal kodlanmış query byte'larıyla doğrulanır. Ad unit/miktar/tür/zaman ayrıca kontrol edilir. Keys kısa süre cache'lenir; key servisi hatası retry edilebilir503'tür. Kapalı SSV'de konsol testleri yalnız imza doğrular, ledger yazmaz. Transaction/intent eşsizliği ve owner transaction'ı tek ödeme sağlar. CAS hatası entitlement tüketmez. Logout pending ödülü silmez; silinmiş kullanıcı callback'i kullanıcı oluşturmaz. SDK earned tek başına ödeme otoritesi değildir.
 
-`ADMOB_SSV_ENABLED=false` ve mobil `productionRewardsEnabled=false` korunur. Gerçek payout kabulü olmadan açılmaz.
+Varsayılan `ADMOB_SSV_ENABLED=false` kalır. Kullanıcının 17 Kasım 2026 tarihli açık canlı uçtan uca test talebiyle VPS kapısı açılmıştır; fiziksel kabul sürmektedir. Mobil doğrulanmış ödül yolu yalnız açık build bayrağıyla production veya kontrollü acceptance kanalında açılır. SDK earned callback’i hiçbir kanalda sunucu imzasının yerine geçmez.
 
 ## Silme
 

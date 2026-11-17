@@ -647,3 +647,42 @@ test("signed SSV HTTP callbacks remain gated, reject tampering and persist exact
     125,
   );
 });
+
+test("cancelled ads release reservations without paying or losing late signed rewards", async () => {
+  const login = await guest();
+  const other = await guest();
+  await write(login);
+  const ids = await Promise.all(
+    Array.from({ length: 4 }, () => prepare(login)),
+  );
+  const cancel = (who: Login, id: string) =>
+    app.inject({
+      method: "POST",
+      url: `/v1/rewards/${id}/cancel`,
+      headers: headers(who),
+    });
+  assert.equal((await cancel(other, ids[0]!)).json().cancelled, false);
+  assert.equal((await cancel(login, ids[0]!)).json().cancelled, true);
+  assert.equal((await cancel(login, ids[0]!)).json().cancelled, true);
+  const replacement = await prepare(login);
+  assert.notEqual(replacement, ids[0]);
+  assert.equal(
+    (await app.inject({ url: "/v1/save", headers: headers(login) })).json()
+      .payload.stamina,
+    100,
+  );
+  assert.equal(await grant(login.user.id, ids[0]!, "energy"), "granted");
+  assert.equal((await cancel(login, ids[0]!)).json().cancelled, false);
+  const receipt = await app.inject({
+    method: "POST",
+    url: "/v1/rewards/redeem",
+    headers: headers(login),
+    payload: {
+      intent_id: ids[0],
+      expected_revision: 1,
+      save_payload: fixture(),
+    },
+  });
+  assert.equal(receipt.json().kind, "redeemed");
+  assert.equal(receipt.json().payload.stamina, 125);
+});

@@ -8,6 +8,13 @@
       "when": 1794925813070,
       "tag": "0000_boring_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794933580757,
+      "tag": "0001_many_martin_li",
+      "breakpoints": true
     }
   ]
 }

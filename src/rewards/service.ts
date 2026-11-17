@@ -50,7 +50,11 @@ export const prepareAd = async (
       throw new ApiError("idempotency_mismatch");
     const [paid] =
       await tx`select intent_id from ad_rewards where intent_id=${previous.id}`;
-    if (paid || new Date(previous.expires_at).getTime() <= Date.now())
+    if (
+      paid ||
+      previous.cancelled_at ||
+      new Date(previous.expires_at).getTime() <= Date.now()
+    )
       throw new ApiError("conflict");
     return {
       kind: "ready" as const,
@@ -61,7 +65,7 @@ export const prepareAd = async (
   }
   // Reserve distinct intents across devices rather than sharing an existing pending intent.
   const [reserved] =
-    await tx`select count(*)::int as count from ad_intents i where user_id=${session.userID} and expires_at>now()
+    await tx`select count(*)::int as count from ad_intents i where user_id=${session.userID} and expires_at>now() and cancelled_at is null
     and not exists (select 1 from ad_rewards r where r.intent_id=i.id)`;
   if (used + Number(reserved?.count ?? 0) >= 4)
     return { kind: "daily_limit" as const, used: 4 as const };
@@ -147,4 +151,18 @@ export const redeemReward = async (
     producer_id: z.string().nullable().parse(reward.producer_id),
     payload: updated,
   };
+};
+
+/** Release a cancelled reservation without erasing metadata needed by a delayed signed callback. */
+export const cancelAd = async (
+  tx: Executor,
+  session: Session,
+  intentID: string,
+) => {
+  await ownerLock(tx, session.userID);
+  const rows =
+    await tx`update ad_intents set cancelled_at=coalesce(cancelled_at,now())
+    where id=${intentID} and user_id=${session.userID} and session_id=${session.id}
+    and not exists (select 1 from ad_rewards where intent_id=${intentID}) returning id`;
+  return { cancelled: rows.length > 0 };
 };
