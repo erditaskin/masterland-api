@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Activate an already-built immutable Masterland release. Migrations are a separate explicit operation.
+set -euo pipefail
+ROOT=/opt/masterland
+exec 9>"$ROOT/deploy.lock"
+flock -n 9 || { echo 'Another Masterland deployment is active'; exit 1; }
+action="${1:-status}"
+release="${2:-}"
+notify() {
+  python3 - "$1" "${release:-unknown}" <<'PY'
+import json,sys,urllib.request
+from pathlib import Path
+path=Path('/opt/masterland/env/slack.env')
+if not path.exists(): raise SystemExit(0)
+url=path.read_text().strip().removeprefix('SLACK_WEBHOOK_URL=').strip()
+if not url.startswith('https://hooks.slack.com/services/'): raise SystemExit(1)
+data=json.dumps({'text':f'Masterland | production | {sys.argv[1]} | release/commit {sys.argv[2]}'}).encode()
+try:
+ with urllib.request.urlopen(urllib.request.Request(url,data=data,headers={'Content-Type':'application/json'}),timeout=10) as response: response.read()
+except Exception: print('Slack deployment notification could not be delivered',file=sys.stderr)
+PY
+}
+compose() {
+  docker compose --project-name masterland-api --env-file "$1/images.env" -f "$1/compose.yml" "${@:2}"
+}
+probe() {
+  local n expected="$1"
+  for n in $(seq 1 20); do
+    if curl -fsS --max-time 3 http://127.0.0.1:4200/ready 2>/dev/null | python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("release")==sys.argv[1] else 1)' "$expected" 2>/dev/null; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+activate() {
+  local target="$ROOT/releases/$release" previous
+  test -f "$target/images.env" && test -f "$target/compose.yml"
+  local image
+  image="$(sed -n 's/^MASTERLAND_API_IMAGE=//p' "$target/images.env")"
+  test "$(docker image inspect -f '{{.Id}}' "$image")" = "$(cat "$target/image.id")"
+  previous="$(readlink -f "$ROOT/releases/current" 2>/dev/null || true)"
+  if ! compose "$target" up -d --no-build || ! probe "$release"; then
+    if [[ -n "$previous" && -f "$previous/images.env" ]]; then compose "$previous" up -d --no-build; probe "$(basename "$previous")"; fi
+    notify 'FAILED; previous release restored when available'
+    return 1
+  fi
+  if [[ -n "$previous" && "$previous" != "$target" ]]; then ln -sfn "$previous" "$ROOT/releases/previous"; fi
+  ln -sfn "$target" "$ROOT/releases/current"
+  notify 'SUCCESS'
+  curl -fsS http://127.0.0.1:4200/ready
+}
+case "$action" in
+  activate)
+    [[ "$release" =~ ^[a-zA-Z0-9._-]{8,80}$ ]] || { echo 'Explicit release required'; exit 2; }
+    activate
+    ;;
+  rollback)
+    previous="$(readlink -f "$ROOT/releases/previous")"
+    release="$(basename "$previous")"
+    activate
+    ;;
+  status)
+    readlink "$ROOT/releases/current" || true
+    curl -fsS --max-time 3 http://127.0.0.1:4200/ready
+    ;;
+  *) echo 'Usage: masterland-deploy activate RELEASE | rollback | status'; exit 2 ;;
+esac

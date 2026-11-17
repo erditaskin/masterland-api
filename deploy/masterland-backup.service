@@ -1,0 +1,10 @@
+[Unit]
+Description=Masterland PostgreSQL verified backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/masterland-backup
+User=root
+UMask=0077
