@@ -206,7 +206,9 @@ export const registerAuth = (app: App) => {
         if (!updated.length) throw new ApiError("unauthenticated");
         redirect.searchParams.set("code", code);
       }
-      return reply.redirect(redirect.toString());
+      // An explicit empty fragment prevents browsers inheriting the provider's fragment
+      // (for example Facebook's #_=_) across this redirect. Native state/PKCE checks stay strict.
+      return reply.redirect(`${redirect.toString()}#`);
     },
   );
   app.post(

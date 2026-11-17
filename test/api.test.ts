@@ -337,6 +337,10 @@ test("OAuth cancellation does not promote or erase guest state", async () => {
   );
   assert.equal(response.statusCode, 302);
   assert(String(response.headers.location).includes("error=access_denied"));
+  assert(
+    String(response.headers.location).endsWith("#"),
+    "An explicit empty fragment prevents inheritance from the provider redirect",
+  );
   assert.equal(
     (await app.inject({ url: "/v1/auth/me", headers: headers(login) })).json()
       .is_anonymous,
