@@ -1,6 +1,6 @@
 import { after, beforeEach, afterEach, test } from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomUUID, generateKeyPairSync, sign } from "node:crypto";
 import { parseConfig } from "../src/config.js";
 import { connect } from "../src/db/client.js";
 import { buildApp, type App } from "../src/http.js";
@@ -564,4 +564,86 @@ test("registered erasure requires recent provider authentication", async () => {
   });
   assert.equal(response.statusCode, 403);
   assert.equal(response.json().error.code, "reauthentication_required");
+});
+
+test("signed SSV HTTP callbacks remain gated, reject tampering and persist exactly one reward", async (t) => {
+  const login = await guest();
+  await write(login);
+  const id = await prepare(login);
+  const { publicKey, privateKey } = generateKeyPairSync("ec", {
+    namedCurve: "prime256v1",
+  });
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    assert.equal(
+      String(input),
+      "https://www.gstatic.com/admob/reward/verifier-keys.json",
+    );
+    return Response.json({
+      keys: [
+        {
+          keyId: 20261117,
+          pem: publicKey.export({ type: "spki", format: "pem" }),
+        },
+      ],
+    });
+  });
+  const query = new URLSearchParams({
+    ad_network: "5450213213286189855",
+    ad_unit: "2927598891",
+    custom_data: id,
+    reward_amount: "25",
+    reward_item: "energy",
+    timestamp: String(Date.now()),
+    transaction_id: hash(randomUUID()),
+    user_id: login.user.id,
+  }).toString();
+  const signature = sign("sha256", Buffer.from(query), privateKey).toString(
+    "base64url",
+  );
+  const url = `/v1/admob/ssv?${query}&signature=${signature}&key_id=20261117`;
+  const redeem = () =>
+    app.inject({
+      method: "POST",
+      url: "/v1/rewards/redeem",
+      headers: headers(login),
+      payload: { intent_id: id, expected_revision: 1, save_payload: fixture() },
+    });
+  assert.equal((await redeem()).json().kind, "pending");
+  const closed = await buildApp({ ...config, ADMOB_SSV_ENABLED: false }, db);
+  try {
+    assert.equal(
+      (await closed.inject(url)).json().status,
+      "verified_rewards_disabled",
+    );
+    assert.equal((await redeem()).json().kind, "pending");
+  } finally {
+    await closed.close();
+  }
+  assert.equal(
+    (await app.inject(url.replace("reward_amount=25", "reward_amount=250")))
+      .statusCode,
+    422,
+  );
+  assert.equal((await redeem()).json().kind, "pending");
+  const callbacks = await Promise.all([app.inject(url), app.inject(url)]);
+  assert.deepEqual(callbacks.map((r) => r.json().status).sort(), [
+    "duplicate",
+    "granted",
+  ]);
+  const redemptions = await Promise.all([redeem(), redeem()]);
+  assert.deepEqual(redemptions.map((r) => r.json().kind).sort(), [
+    "already_redeemed",
+    "redeemed",
+  ]);
+  assert.equal(
+    (await app.inject({ url: "/v1/save", headers: headers(login) })).json()
+      .payload.stamina,
+    125,
+  );
+  assert.equal((await app.inject(url)).json().status, "duplicate");
+  assert.equal(
+    (await app.inject({ url: "/v1/save", headers: headers(login) })).json()
+      .payload.stamina,
+    125,
+  );
 });
