@@ -33,7 +33,7 @@ Enerji +25; üretici ödülü yalnız sunucuda bağlanmış hedef üreticiyi 80 
 
 ECDSA imzası orijinal kodlanmış query byte'larıyla doğrulanır. Ad unit/miktar/tür/zaman ayrıca kontrol edilir. Keys kısa süre cache'lenir; key servisi hatası retry edilebilir503'tür. Kapalı SSV'de konsol testleri yalnız imza doğrular, ledger yazmaz. Transaction/intent eşsizliği ve owner transaction'ı tek ödeme sağlar. CAS hatası entitlement tüketmez. Logout pending ödülü silmez; silinmiş kullanıcı callback'i kullanıcı oluşturmaz. SDK earned tek başına ödeme otoritesi değildir.
 
-Varsayılan `ADMOB_SSV_ENABLED=false` kalır. Kullanıcının 17 Kasım 2026 tarihli açık canlı uçtan uca test talebiyle VPS kapısı açılmıştır; fiziksel kabul sürmektedir. Mobil doğrulanmış ödül yolu yalnız açık build bayrağıyla production veya kontrollü acceptance kanalında açılır. SDK earned callback’i hiçbir kanalda sunucu imzasının yerine geçmez.
+Varsayılan `ADMOB_SSV_ENABLED=false` kalır. Kullanıcının 17 Kasım 2026 tarihli açık canlı uçtan uca test talebiyle VPS kapısı açılmıştır. Fiziksel +25 ve arka plan kurtarması; gerçek Google imzalı üretici/enerji ödemesi, ortak kota ve temiz Release simülatörde terk etmede sıfır ödeme kabulü tamamlanmıştır. Kanıt mobil depodaki `docs/live-reward-acceptance-20261117.md` içindedir. Mobil doğrulanmış ödül yolu yalnız açık build bayrağıyla production veya kontrollü acceptance kanalında açılır. SDK earned callback’i hiçbir kanalda sunucu imzasının yerine geçmez.
 
 ## Silme
 
