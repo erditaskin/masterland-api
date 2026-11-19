@@ -537,7 +537,7 @@ test("guest erasure removes all owned state and receipt recovers a lost response
 test("Masterland deletion deactivates the old owner and the same provider creates a fresh account", async () => {
   const device = { id: randomUUID(), os: "ios" as const };
   const identity = {
-    provider: "apple" as const,
+    provider: "google" as const,
     subject: randomUUID(),
     email: `${randomUUID()}@example.test`,
     fullName: "Test Player",
@@ -586,6 +586,41 @@ test("Masterland deletion deactivates the old owner and the same provider create
   const [record] =
     await db`select os from user_devices where user_id=${fresh.user.id} and device_id=${device.id}`;
   assert.equal(record?.os, "ios");
+});
+
+test("Apple deletion requires an Apple code and preserves the account when it is missing", async () => {
+  const login = await db.begin((tx) =>
+    signInIdentity(
+      tx,
+      config,
+      {
+        provider: "apple",
+        subject: randomUUID(),
+        email: null,
+        fullName: null,
+      },
+      null,
+      false,
+    ),
+  );
+  owners.add(login.user.id);
+  const response = await app.inject({
+    method: "POST",
+    url: "/v1/account/deletion",
+    headers: headers(login),
+    payload: {
+      request_id: randomUUID(),
+      receipt: hash(randomUUID()),
+      confirmation: "DELETE",
+    },
+  });
+  assert.equal(response.statusCode, 403);
+  assert.equal(response.json().error.code, "reauthentication_required");
+  assert.equal(
+    (await app.inject({ url: "/v1/auth/me", headers: headers(login) }))
+      .statusCode,
+    200,
+  );
 });
 
 test("guest and existing sessions record devices for their authenticated owner", async () => {

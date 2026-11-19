@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { App } from "./http.js";
 import { ApiError, errors, hash, ownerLock } from "./core.js";
+import { revokeApple } from "./auth/providers.js";
 import { requireSession } from "./sessions.js";
 
 const receiptSchema = z.object({
@@ -64,6 +65,17 @@ export const registerDeletion = (app: App) => {
           on conflict (owner_id) do update set request_id=excluded.request_id,receipt_hash=excluded.receipt_hash,status='completed'
           where account_deletions.status<>'completed' returning request_id`;
         if (!receipt) throw new ApiError("conflict");
+        const [apple] =
+          await tx`select subject from identities where user_id=${session.userID} and provider='apple'`;
+        if (apple) {
+          if (!body.apple_authorization_code)
+            throw new ApiError("reauthentication_required");
+          await revokeApple(
+            app.config,
+            body.apple_authorization_code,
+            String(apple.subject),
+          );
+        }
         await tx`delete from identities where user_id=${session.userID}`;
         await tx`delete from user_devices where user_id=${session.userID}`;
         await tx`delete from oauth_attempts where owner_id=${session.userID}`;

@@ -37,7 +37,7 @@ Varsayılan `ADMOB_SSV_ENABLED=false` kalır. Kullanıcının 17 Kasım 2026 tar
 
 ## Silme
 
-`POST /v1/account/deletion` geçerli oturum, DELETE onayı, kalıcı request_id ve 256 bit receipt ister. Geçerli Masterland oturumu, kayıtlı ve misafir hesaplarda yeterlidir. İşlem Masterland oturumlarını, sağlayıcı kimliği eşlemelerini, cihazları, bulut kayıtlarını ve bunlara bağlı kayıtları kaldırır. Kullanıcı satırı kişisel bilgileri temizlenmiş ve `deleted=true` olarak saklanır. Sağlayıcı yetkisi iptal edilmez. Aynı sağlayıcıyla yeniden giriş yeni bir Masterland hesabı oluşturur.
+`POST /v1/account/deletion` geçerli oturum, DELETE onayı, kalıcı request_id ve 256 bit receipt ister. Geçerli Masterland oturumu, kayıtlı ve misafir hesaplarda yeterlidir. İşlem Masterland oturumlarını, sağlayıcı kimliği eşlemelerini, cihazları, bulut kayıtlarını ve bunlara bağlı kayıtları kaldırır. Kullanıcı satırı kişisel bilgileri temizlenmiş ve `deleted=true` olarak saklanır. Apple ile açılan hesaplarda silme düğmesi Face ID veya Apple doğrulamasını açar. API tek kullanımlık kodu aynı Apple kimliğine bağlar ve uygulamanın Apple belirtecini iptal eder. Google ve Facebook yetkileri korunur. Aynı sağlayıcıyla yeniden giriş yeni bir Masterland hesabı oluşturur.
 
 Normalleştirilmiş `users.email` ve `deleted` birlikte benzersizdir. Aynı e-postayı bildiren farklı sağlayıcı kimlikleri birbirine bağlanmaz. Benzersiz anahtar yalnızca bir hesapta tutulur ve diğer hesaplar görüntüleme e-postasını `provider_email` üzerinden korur.
 
