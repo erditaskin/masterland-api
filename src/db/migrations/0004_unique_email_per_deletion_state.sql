@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "users_email_deleted" ON "users" USING btree ("email","deleted");

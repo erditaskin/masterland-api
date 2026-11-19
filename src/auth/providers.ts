@@ -1,5 +1,4 @@
-import { readFile } from "node:fs/promises";
-import { createRemoteJWKSet, jwtVerify, importPKCS8, SignJWT } from "jose";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { z } from "zod";
 import type { Config } from "../config.js";
 import { ApiError, equal, hash } from "../core.js";
@@ -208,55 +207,5 @@ export const exchangeProvider = async (
     email: profile.email ?? null,
     fullName: profile.name ?? null,
   });
-};
-export const revokeApple = async (
-  config: Config,
-  code: string,
-  subject: string,
-) => {
-  if (!config.APPLE_KEY_ID || !config.APPLE_PRIVATE_KEY_PATH)
-    throw new ApiError("disabled");
-  const pem = await readFile(config.APPLE_PRIVATE_KEY_PATH, "utf8");
-  const key = await importPKCS8(pem, "ES256");
-  const secret = await new SignJWT({})
-    .setProtectedHeader({ alg: "ES256", kid: config.APPLE_KEY_ID })
-    .setIssuer(config.APPLE_TEAM_ID)
-    .setAudience("https://appleid.apple.com")
-    .setSubject(config.APPLE_CLIENT_ID)
-    .setIssuedAt()
-    .setExpirationTime("5m")
-    .sign(key);
-  const tokens = z
-    .object({ id_token: z.string(), refresh_token: z.string() })
-    .parse(
-      await jsonResponse("https://appleid.apple.com/auth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: config.APPLE_CLIENT_ID,
-          client_secret: secret,
-          code,
-          grant_type: "authorization_code",
-        }),
-      }),
-    );
-  const verified = await jwtVerify(tokens.id_token, appleKeys, {
-    issuer: "https://appleid.apple.com",
-    audience: config.APPLE_CLIENT_ID,
-    algorithms: ["RS256"],
-  });
-  if (verified.payload.sub !== subject) throw new ApiError("unauthenticated");
-  const response = await fetch("https://appleid.apple.com/auth/revoke", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: config.APPLE_CLIENT_ID,
-      client_secret: secret,
-      token: tokens.refresh_token,
-      token_type_hint: "refresh_token",
-    }),
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!response.ok) throw new ApiError("provider_unavailable");
 };
 export const nativeNonce = (nonce: string) => hash(nonce);

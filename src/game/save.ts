@@ -15,7 +15,7 @@ const producer = z.string().refine((id) => producerCities.has(id));
 const tile = z.object({ id: z.string().min(1).max(256), item }).passthrough();
 const city = z
   .object({
-    board: z.array(tile.nullable()).length(54),
+    board: z.array(tile.nullable()).min(54).max(63),
     storage: z.array(tile).max(10000),
     storageCapacity: natural.min(12),
     owned: z.array(producer),
@@ -37,6 +37,7 @@ export const saveSchema = z
   .object({
     schema: z.literal(2),
     progressionVersion: z.literal(2).optional(),
+    boardLayoutVersion: z.literal(2).optional(),
     testOnly: z.literal(false).optional(),
     xp: natural,
     gold: natural,
@@ -84,6 +85,17 @@ export const saveSchema = z
   })
   .passthrough()
   .superRefine((save, ctx) => {
+    if (
+      Object.values(save.cities).some(
+        (citySave) =>
+          citySave.board.length !== 63 &&
+          !(
+            save.boardLayoutVersion === undefined &&
+            citySave.board.length === 54
+          ),
+      )
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid board size" });
     const ids = Object.values(save.cities).flatMap((c) =>
       [...c.board.filter((t) => t !== null), ...c.storage].map((t) => t.id),
     );

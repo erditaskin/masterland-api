@@ -118,7 +118,13 @@ export const buildApp = async (
     origin: [config.SITE_ORIGIN],
     credentials: false,
     methods: ["GET", "POST", "PUT", "OPTIONS"],
-    allowedHeaders: ["content-type", "authorization", "x-masterland-owner"],
+    allowedHeaders: [
+      "content-type",
+      "authorization",
+      "x-masterland-owner",
+      "x-masterland-device-id",
+      "x-masterland-device-os",
+    ],
     exposedHeaders: ["x-request-id"],
   });
   await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });

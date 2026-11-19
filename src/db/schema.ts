@@ -7,6 +7,7 @@ import {
   jsonb,
   integer,
   bigint,
+  boolean,
   primaryKey,
   index,
   uniqueIndex,
@@ -22,12 +23,30 @@ export const users = pgTable(
     kind: text("kind").notNull().default("guest"),
     status: text("status").notNull().default("active"),
     email: text("email"),
+    providerEmail: text("provider_email"),
+    deleted: boolean("deleted").notNull().default(false),
     fullName: text("full_name"),
     createdAt: date("created_at"),
   },
   (t) => [
+    uniqueIndex("users_email_deleted").on(t.email, t.deleted),
     check("user_kind", sql`${t.kind} in ('guest','registered')`),
     check("user_status", sql`${t.status} in ('active','deleting')`),
+  ],
+);
+export const userDevices = pgTable(
+  "user_devices",
+  {
+    userID: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceID: uuid("device_id").notNull(),
+    os: text("os").notNull(),
+    lastSeenAt: date("last_seen_at"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userID, t.deviceID] }),
+    check("device_os", sql`${t.os} in ('ios','android')`),
   ],
 );
 export const identities = pgTable(

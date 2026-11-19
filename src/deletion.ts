@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { App } from "./http.js";
 import { ApiError, errors, hash, ownerLock } from "./core.js";
 import { requireSession } from "./sessions.js";
-import { revokeApple } from "./auth/providers.js";
 
 const receiptSchema = z.object({
   request_id: z.uuid(),
@@ -43,7 +42,11 @@ export const registerDeletion = (app: App) => {
         body: capability
           .extend({
             confirmation: z.literal("DELETE"),
-            apple_authorization_code: z.string().max(8192).nullable(),
+            apple_authorization_code: z
+              .string()
+              .max(8192)
+              .nullable()
+              .optional(),
           })
           .strict(),
         response: { 200: receiptSchema, ...errors },
@@ -52,54 +55,24 @@ export const registerDeletion = (app: App) => {
     async (request) => {
       if (!app.config.ACCOUNT_DELETION_ENABLED) throw new ApiError("disabled");
       const session = await requireSession(app, request);
-      // Guests possess no external identity to reauthenticate; the current opaque session and
-      // explicit, unique durable receipt authorize only that guest's own erasure.
-      if (
-        session.kind === "registered" &&
-        Date.now() - session.authenticatedAt.getTime() > 240000
-      )
-        throw new ApiError("reauthentication_required");
       const body = request.body;
       await app.db.begin(async (tx) => {
         await ownerLock(tx, session.userID);
-        const [prior] =
-          await tx`select request_id,receipt_hash from account_deletions where owner_id=${session.userID} or request_id=${body.request_id}`;
-        if (
-          prior &&
-          (prior.request_id !== body.request_id ||
-            prior.receipt_hash !== hash(body.receipt))
-        )
-          throw new ApiError("conflict");
-        if (!prior)
-          await tx`insert into account_deletions (request_id,owner_id,receipt_hash) values (${body.request_id},${session.userID},${hash(body.receipt)})`;
+        const [receipt] =
+          await tx`insert into account_deletions (request_id,owner_id,receipt_hash,status)
+          values (${body.request_id},${session.userID},${hash(body.receipt)},'completed')
+          on conflict (owner_id) do update set request_id=excluded.request_id,receipt_hash=excluded.receipt_hash,status='completed'
+          where account_deletions.status<>'completed' returning request_id`;
+        if (!receipt) throw new ApiError("conflict");
+        await tx`delete from identities where user_id=${session.userID}`;
+        await tx`delete from user_devices where user_id=${session.userID}`;
+        await tx`delete from oauth_attempts where owner_id=${session.userID}`;
+        await tx`delete from sessions where user_id=${session.userID}`;
+        await tx`delete from game_save_receipts where user_id=${session.userID}`;
+        await tx`delete from game_save_history where user_id=${session.userID}`;
+        await tx`delete from game_saves where user_id=${session.userID}`;
+        await tx`update users set deleted=true,status='deleting',email=null,provider_email=null,full_name=null where id=${session.userID}`;
       });
-      try {
-        await app.db.begin(async (tx) => {
-          await ownerLock(tx, session.userID);
-          const [receipt] =
-            await tx`select * from account_deletions where request_id=${body.request_id} and receipt_hash=${hash(body.receipt)} for update`;
-          if (!receipt || receipt.owner_id !== session.userID)
-            throw new ApiError("forbidden");
-          const [apple] =
-            await tx`select subject from identities where user_id=${session.userID} and provider='apple'`;
-          if (apple && !receipt.apple_revoked_at) {
-            if (!body.apple_authorization_code)
-              throw new ApiError("reauthentication_required");
-            await revokeApple(
-              app.config,
-              body.apple_authorization_code,
-              String(apple.subject),
-            );
-            await tx`update account_deletions set apple_revoked_at=now() where request_id=${body.request_id}`;
-          }
-          await tx`update users set status='deleting' where id=${session.userID}`;
-          await tx`delete from users where id=${session.userID}`;
-          await tx`update account_deletions set status='completed' where request_id=${body.request_id}`;
-        });
-      } catch (error) {
-        await app.db`update account_deletions set status='failed' where request_id=${body.request_id} and status<>'completed'`;
-        throw error;
-      }
       return {
         request_id: body.request_id,
         status: "completed" as const,

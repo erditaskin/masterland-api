@@ -38,7 +38,7 @@ const fixture = () =>
     cityID: "city1",
     cities: {
       city1: {
-        board: Array(54).fill(null),
+        board: Array(63).fill(null),
         storage: [],
         storageCapacity: 12,
         owned: ["producer1"],
@@ -534,7 +534,123 @@ test("guest erasure removes all owned state and receipt recovers a lost response
   assert.equal(wrong.statusCode, 404);
   assert.equal(await grant(login.user.id, intent), "account_unavailable");
 });
-test("registered erasure requires recent provider authentication", async () => {
+test("Masterland deletion deactivates the old owner and the same provider creates a fresh account", async () => {
+  const device = { id: randomUUID(), os: "ios" as const };
+  const identity = {
+    provider: "apple" as const,
+    subject: randomUUID(),
+    email: `${randomUUID()}@example.test`,
+    fullName: "Test Player",
+  };
+  const signIn = () =>
+    db.begin((tx) => signInIdentity(tx, config, identity, null, false, device));
+  const original = await signIn();
+  owners.add(original.user.id);
+  await write(original);
+  const deletion = await app.inject({
+    method: "POST",
+    url: "/v1/account/deletion",
+    headers: headers(original),
+    payload: {
+      request_id: randomUUID(),
+      receipt: hash(randomUUID()),
+      confirmation: "DELETE",
+    },
+  });
+  assert.equal(deletion.statusCode, 200, deletion.body);
+  const [tombstone] =
+    await db`select deleted,email from users where id=${original.user.id}`;
+  assert.equal(tombstone?.deleted, true);
+  assert.equal(tombstone?.email, null);
+  for (const table of [
+    "game_saves",
+    "user_devices",
+    "sessions",
+    "identities",
+  ]) {
+    assert.equal(
+      (await db`select 1 from ${db(table)} where user_id=${original.user.id}`)
+        .length,
+      0,
+    );
+  }
+  assert.equal(
+    (await app.inject({ url: "/v1/auth/me", headers: headers(original) }))
+      .statusCode,
+    401,
+  );
+  const fresh = await signIn();
+  owners.add(fresh.user.id);
+  assert.notEqual(fresh.user.id, original.user.id);
+  assert.equal(fresh.user.email, identity.email);
+  const [record] =
+    await db`select os from user_devices where user_id=${fresh.user.id} and device_id=${device.id}`;
+  assert.equal(record?.os, "ios");
+});
+
+test("guest and existing sessions record devices for their authenticated owner", async () => {
+  const deviceID = randomUUID();
+  const deviceHeaders = {
+    "x-masterland-device-id": deviceID,
+    "x-masterland-device-os": "ios",
+  };
+  const response = await app.inject({
+    method: "POST",
+    url: "/v1/auth/guest",
+    headers: deviceHeaders,
+    payload: { request_id: randomUUID() },
+  });
+  assert.equal(response.statusCode, 200, response.body);
+  const login = sessionSchema.parse(response.json());
+  owners.add(login.user.id);
+  assert.equal(login.user.is_anonymous, true);
+  const secondID = randomUUID();
+  const me = await app.inject({
+    url: "/v1/auth/me",
+    headers: {
+      ...headers(login),
+      ...deviceHeaders,
+      "x-masterland-device-id": secondID,
+    },
+  });
+  assert.equal(me.statusCode, 200, me.body);
+  const records =
+    await db`select device_id,os from user_devices where user_id=${login.user.id}`;
+  assert.deepEqual(
+    new Set(records.map((row) => row.device_id)),
+    new Set([deviceID, secondID]),
+  );
+  assert(records.every((row) => row.os === "ios"));
+});
+
+test("session and device timestamps refresh only after their five-minute window", async () => {
+  const login = await guest();
+  const deviceID = randomUUID();
+  const read = () =>
+    app.inject({
+      url: "/v1/auth/me",
+      headers: {
+        ...headers(login),
+        "x-masterland-device-id": deviceID,
+        "x-masterland-device-os": "ios",
+      },
+    });
+  assert.equal((await read()).statusCode, 200);
+  const stamps =
+    () => db`select s.last_seen_at as session_time,d.last_seen_at as device_time
+    from sessions s join user_devices d on d.user_id=s.user_id where s.user_id=${login.user.id}`;
+  const [initial] = await stamps();
+  assert.equal((await read()).statusCode, 200);
+  assert.deepEqual((await stamps())[0], initial);
+  await db`update sessions set last_seen_at=now()-interval '6 minutes' where user_id=${login.user.id}`;
+  await db`update user_devices set last_seen_at=now()-interval '6 minutes' where user_id=${login.user.id}`;
+  assert.equal((await read()).statusCode, 200);
+  const [refreshed] = await stamps();
+  assert(new Date(refreshed?.session_time) > new Date(initial?.session_time));
+  assert(new Date(refreshed?.device_time) > new Date(initial?.device_time));
+});
+
+test("registered erasure replaces a failed attempt with one valid-session request", async () => {
   const login = await db.begin(async (tx) =>
     signInIdentity(
       tx,
@@ -551,6 +667,8 @@ test("registered erasure requires recent provider authentication", async () => {
   );
   owners.add(login.user.id);
   await db`update sessions set authenticated_at=now()-interval '1 hour' where user_id=${login.user.id}`;
+  await db`insert into account_deletions (request_id,owner_id,receipt_hash,status)
+    values (${randomUUID()},${login.user.id},${hash(randomUUID())},'failed')`;
   const response = await app.inject({
     method: "POST",
     url: "/v1/account/deletion",
@@ -562,8 +680,8 @@ test("registered erasure requires recent provider authentication", async () => {
       apple_authorization_code: null,
     },
   });
-  assert.equal(response.statusCode, 403);
-  assert.equal(response.json().error.code, "reauthentication_required");
+  assert.equal(response.statusCode, 200, response.body);
+  assert.equal(response.json().auth_deleted, true);
 });
 
 test("signed SSV HTTP callbacks remain gated, reject tampering and persist exactly one reward", async (t) => {

@@ -15,6 +15,27 @@
       "when": 1794933580757,
       "tag": "0001_many_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795047190612,
+      "tag": "0002_account_lifecycle_and_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795047190835,
+      "tag": "0003_normalize_account_emails",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795047191120,
+      "tag": "0004_unique_email_per_deletion_state",
+      "breakpoints": true
     }
   ]
 }

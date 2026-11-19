@@ -1,10 +1,20 @@
 import { z } from "zod";
 import type { App } from "../http.js";
-import { ApiError, challenge, errors, hash, token, uuid } from "../core.js";
+import {
+  ApiError,
+  challenge,
+  errors,
+  hash,
+  ownerLock,
+  token,
+  uuid,
+} from "../core.js";
 import {
   inspectSession,
   issueSession,
   requireSession,
+  readDevice,
+  recordDevice,
   sessionSchema,
   userSchema,
   userView,
@@ -33,23 +43,32 @@ export const registerAuth = (app: App) => {
       },
     },
     async (request) => {
+      const device = readDevice(request);
       const session = await inspectSession(app, request);
       if (session)
         return app.db.begin(async (tx) =>
-          issueSession(tx, session.userID, app.config),
+          issueSession(tx, session.userID, app.config, device),
         );
       return app.db.begin(async (tx) => {
         const [user] = await tx`insert into users default values returning id`;
         if (!user) throw new ApiError("internal");
-        return issueSession(tx, String(user.id), app.config);
+        return issueSession(tx, String(user.id), app.config, device);
       });
     },
   );
   app.get(
     "/v1/auth/me",
     { schema: { response: { 200: userSchema, ...errors } } },
-    async (request) =>
-      userView(app.db, (await requireSession(app, request)).userID),
+    async (request) => {
+      const device = readDevice(request);
+      const { userID } = await requireSession(app, request);
+      if (!device) return userView(app.db, userID);
+      return app.db.begin(async (tx) => {
+        await ownerLock(tx, userID);
+        await recordDevice(tx, userID, device);
+        return userView(tx, userID);
+      });
+    },
   );
   app.post(
     "/v1/auth/logout",
@@ -125,6 +144,7 @@ export const registerAuth = (app: App) => {
           identity,
           previous,
           attempt.reauthenticate === 1,
+          readDevice(request),
         );
       });
     },
@@ -245,6 +265,7 @@ export const registerAuth = (app: App) => {
           identity,
           bound,
           attempt.reauthenticate === 1,
+          readDevice(request),
         );
         await tx`delete from oauth_attempts where id=${attempt.id}`;
         return session;

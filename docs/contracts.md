@@ -37,9 +37,13 @@ Varsayılan `ADMOB_SSV_ENABLED=false` kalır. Kullanıcının 17 Kasım 2026 tar
 
 ## Silme
 
-`POST /v1/account/deletion`: DELETE onayı, kalıcı request_id ve256-bit receipt. Kayıtlı hesap son dört dakika içinde provider doğrulaması ister. Guest kendi geçerli opaque session'ıyla silinebilir. Apple bağlıysa aynı subject için yeni authorization code kullanılarak revoke yapılır. Özel anahtardan beş dakikalık client secret üretilir; eski90 günlük JWT'ye bağımlılık yoktur.
+`POST /v1/account/deletion` geçerli oturum, DELETE onayı, kalıcı request_id ve 256 bit receipt ister. Geçerli Masterland oturumu, kayıtlı ve misafir hesaplarda yeterlidir. İşlem Masterland oturumlarını, sağlayıcı kimliği eşlemelerini, cihazları, bulut kayıtlarını ve bunlara bağlı kayıtları kaldırır. Kullanıcı satırı kişisel bilgileri temizlenmiş ve `deleted=true` olarak saklanır. Sağlayıcı yetkisi iptal edilmez. Aynı sağlayıcıyla yeniden giriş yeni bir Masterland hesabı oluşturur.
 
-Mobil journal istekten önce SecureStore'a yazılır. Hesaptan bağımsız receipt hash'i, `POST /v1/account/deletion/status` ile hesap silindikten sonra da sorgulanır. Yerel oyun yalnız eşleşen auth_deleted=true cevabından sonra sıfırlanır. Cevap kaybı/revoke/yeniden deneme fiziksel cihaz kabulü ayrıca gerekir. `ACCOUNT_DELETION_ENABLED=false` başlangıçta korunur.
+Normalleştirilmiş `users.email` ve `deleted` birlikte benzersizdir. Aynı e-postayı bildiren farklı sağlayıcı kimlikleri birbirine bağlanmaz. Benzersiz anahtar yalnızca bir hesapta tutulur ve diğer hesaplar görüntüleme e-postasını `provider_email` üzerinden korur.
+
+Yeni istemci tek silme isteği gönderir. API, hesap verileri ile silme işaretini tek veritabanı işleminde günceller. Yerel oyun eşleşen `auth_deleted=true` sonucuyla sıfırlanır ve Hesap sayfası giriş seçeneklerini gösterir. `POST /v1/account/deletion/status` eski istemciler için aynı request_id ve receipt ile çalışmaya devam eder.
+
+Misafir ve kayıtlı oturum açma istekleri ile `GET /v1/auth/me` varsa `x-masterland-device-id` ve `x-masterland-device-os` başlıklarını birlikte doğrular. Uygulama kurulumu için üretilen UUID, cihaz işletim sistemi ve son görülme zamanı doğrulanmış kullanıcı kimliğine bağlanır. Eski istemciler cihaz başlıkları olmadan çalışmaya devam eder.
 
 ## Güvenlik ve sınırlar
 

@@ -125,6 +125,206 @@
         "item158",
         "item159"
       ]
+    },
+    "producer14": {
+      "cityID": "city2",
+      "items": [
+        "item160",
+        "item161",
+        "item162",
+        "item163",
+        "item164",
+        "item165",
+        "item166"
+      ]
+    },
+    "producer3": {
+      "cityID": "city3",
+      "items": [
+        "item15",
+        "item16",
+        "item17",
+        "item18",
+        "item19",
+        "item20",
+        "item195",
+        "item196"
+      ]
+    },
+    "producer4": {
+      "cityID": "city3",
+      "items": [
+        "item21",
+        "item22",
+        "item23",
+        "item24",
+        "item25",
+        "item26",
+        "item197",
+        "item198"
+      ]
+    },
+    "producer15": {
+      "cityID": "city3",
+      "items": [
+        "item167",
+        "item199",
+        "item200",
+        "item168",
+        "item201",
+        "item202",
+        "item203"
+      ]
+    },
+    "producer16": {
+      "cityID": "city3",
+      "items": [
+        "item204",
+        "item205",
+        "item206",
+        "item169",
+        "item207",
+        "item208",
+        "item209",
+        "item210"
+      ]
+    },
+    "producer17": {
+      "cityID": "city3",
+      "items": [
+        "item170",
+        "item211",
+        "item212",
+        "item213",
+        "item214",
+        "item215",
+        "item216",
+        "item217"
+      ]
+    },
+    "producer18": {
+      "cityID": "city4",
+      "items": [
+        "item218",
+        "item173",
+        "item219",
+        "item220",
+        "item221",
+        "item222",
+        "item223"
+      ]
+    },
+    "producer19": {
+      "cityID": "city4",
+      "items": [
+        "item224",
+        "item225",
+        "item226",
+        "item227",
+        "item228",
+        "item229",
+        "item230"
+      ]
+    },
+    "producer20": {
+      "cityID": "city4",
+      "items": [
+        "item176",
+        "item246",
+        "item231",
+        "item179",
+        "item232",
+        "item233",
+        "item234"
+      ]
+    },
+    "producer21": {
+      "cityID": "city4",
+      "items": [
+        "item235",
+        "item236",
+        "item237",
+        "item238",
+        "item239",
+        "item175",
+        "item180",
+        "item240"
+      ]
+    },
+    "producer22": {
+      "cityID": "city4",
+      "items": [
+        "item241",
+        "item242",
+        "item243",
+        "item244",
+        "item245",
+        "item174",
+        "item247",
+        "item248"
+      ]
+    },
+    "producer23": {
+      "cityID": "city5",
+      "items": [
+        "item249",
+        "item250",
+        "item251",
+        "item183",
+        "item252",
+        "item189",
+        "item253",
+        "item254"
+      ]
+    },
+    "producer24": {
+      "cityID": "city5",
+      "items": [
+        "item255",
+        "item256",
+        "item185",
+        "item257",
+        "item258",
+        "item259",
+        "item260"
+      ]
+    },
+    "producer25": {
+      "cityID": "city5",
+      "items": [
+        "item261",
+        "item262",
+        "item263",
+        "item264",
+        "item265",
+        "item266",
+        "item267",
+        "item268"
+      ]
+    },
+    "producer26": {
+      "cityID": "city5",
+      "items": [
+        "item269",
+        "item270",
+        "item271",
+        "item272",
+        "item273",
+        "item274",
+        "item275"
+      ]
+    },
+    "producer27": {
+      "cityID": "city5",
+      "items": [
+        "item276",
+        "item277",
+        "item278",
+        "item279",
+        "item280",
+        "item281",
+        "item282"
+      ]
     }
   },
   "achievements": [
@@ -139,6 +339,153 @@
     "achievement9",
     "achievement10",
     "achievement11",
-    "achievement12"
+    "achievement12",
+    "city1-profession1-rank0",
+    "city1-profession2-rank0",
+    "city1-combo1-rank0",
+    "city1-profession1-rank1",
+    "city1-profession2-rank1",
+    "city1-combo1-rank1",
+    "city1-profession1-rank2",
+    "city1-profession2-rank2",
+    "city1-combo1-rank2",
+    "city1-profession1-rank3",
+    "city1-profession2-rank3",
+    "city1-combo1-rank3",
+    "city1-profession1-rank4",
+    "city1-profession2-rank4",
+    "city1-combo1-rank4",
+    "city1-profession1-rank5",
+    "city1-profession2-rank5",
+    "city1-combo1-rank5",
+    "city1-profession1-rank6",
+    "city1-profession2-rank6",
+    "city1-combo1-rank6",
+    "city2-profession5-rank0",
+    "city2-profession6-rank0",
+    "city2-combo2-rank0",
+    "city2-profession5-rank1",
+    "city2-profession6-rank1",
+    "city2-combo2-rank1",
+    "city2-profession5-rank2",
+    "city2-profession6-rank2",
+    "city2-combo2-rank2",
+    "city2-profession5-rank3",
+    "city2-profession6-rank3",
+    "city2-combo2-rank3",
+    "city2-profession5-rank4",
+    "city2-profession6-rank4",
+    "city2-combo2-rank4",
+    "city2-profession5-rank5",
+    "city2-profession6-rank5",
+    "city2-combo2-rank5",
+    "city2-profession5-rank6",
+    "city2-profession6-rank6",
+    "city2-combo2-rank6",
+    "city3-profession3-rank0",
+    "city3-profession4-rank0",
+    "city3-profession7-rank0",
+    "city3-combo3-rank0",
+    "city3-profession3-rank1",
+    "city3-profession4-rank1",
+    "city3-profession7-rank1",
+    "city3-combo3-rank1",
+    "city3-profession3-rank2",
+    "city3-profession4-rank2",
+    "city3-profession7-rank2",
+    "city3-combo3-rank2",
+    "city3-profession3-rank3",
+    "city3-profession4-rank3",
+    "city3-profession7-rank3",
+    "city3-combo3-rank3",
+    "city3-profession3-rank4",
+    "city3-profession4-rank4",
+    "city3-profession7-rank4",
+    "city3-combo3-rank4",
+    "city3-profession3-rank5",
+    "city3-profession4-rank5",
+    "city3-profession7-rank5",
+    "city3-combo3-rank5",
+    "city3-profession3-rank6",
+    "city3-profession4-rank6",
+    "city3-profession7-rank6",
+    "city3-combo3-rank6",
+    "city4-profession8-rank0",
+    "city4-profession9-rank0",
+    "city4-combo4-rank0",
+    "city4-profession8-rank1",
+    "city4-profession9-rank1",
+    "city4-combo4-rank1",
+    "city4-profession8-rank2",
+    "city4-profession9-rank2",
+    "city4-combo4-rank2",
+    "city4-profession8-rank3",
+    "city4-profession9-rank3",
+    "city4-combo4-rank3",
+    "city4-profession8-rank4",
+    "city4-profession9-rank4",
+    "city4-combo4-rank4",
+    "city4-profession8-rank5",
+    "city4-profession9-rank5",
+    "city4-combo4-rank5",
+    "city4-profession8-rank6",
+    "city4-profession9-rank6",
+    "city4-combo4-rank6",
+    "city5-profession10-rank0",
+    "city5-profession11-rank0",
+    "city5-combo5-rank0",
+    "city5-profession10-rank1",
+    "city5-profession11-rank1",
+    "city5-combo5-rank1",
+    "city5-profession10-rank2",
+    "city5-profession11-rank2",
+    "city5-combo5-rank2",
+    "city5-profession10-rank3",
+    "city5-profession11-rank3",
+    "city5-combo5-rank3",
+    "city5-profession10-rank4",
+    "city5-profession11-rank4",
+    "city5-combo5-rank4",
+    "city5-profession10-rank5",
+    "city5-profession11-rank5",
+    "city5-combo5-rank5",
+    "city5-profession10-rank6",
+    "city5-profession11-rank6",
+    "city5-combo5-rank6",
+    "city1-delivery-rank0",
+    "city1-delivery-rank1",
+    "city1-delivery-rank2",
+    "city1-delivery-rank3",
+    "city1-delivery-rank4",
+    "city1-delivery-rank5",
+    "city1-delivery-rank6",
+    "city2-delivery-rank0",
+    "city2-delivery-rank1",
+    "city2-delivery-rank2",
+    "city2-delivery-rank3",
+    "city2-delivery-rank4",
+    "city2-delivery-rank5",
+    "city2-delivery-rank6",
+    "city3-delivery-rank0",
+    "city3-delivery-rank1",
+    "city3-delivery-rank2",
+    "city3-delivery-rank3",
+    "city3-delivery-rank4",
+    "city3-delivery-rank5",
+    "city3-delivery-rank6",
+    "city4-delivery-rank0",
+    "city4-delivery-rank1",
+    "city4-delivery-rank2",
+    "city4-delivery-rank3",
+    "city4-delivery-rank4",
+    "city4-delivery-rank5",
+    "city4-delivery-rank6",
+    "city5-delivery-rank0",
+    "city5-delivery-rank1",
+    "city5-delivery-rank2",
+    "city5-delivery-rank3",
+    "city5-delivery-rank4",
+    "city5-delivery-rank5",
+    "city5-delivery-rank6"
   ]
 }
